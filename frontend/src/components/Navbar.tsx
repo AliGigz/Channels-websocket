@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useAuth } from "./ProtectedRoute";
+import { useAuth } from "./AuthProvider";
 import { useEffect } from "react";
 
 export default function Navbar() {
@@ -9,10 +9,15 @@ export default function Navbar() {
     <div className="flex p-4 border-bottom shadow-sm">
       <h4 className="bold text-2xl">Channels</h4>
       <div className="ml-auto">
-        {localStorage.getItem("access") ? (
+        {currentUserId ? (
+          <>
+          <Link className="hover:text-blue-500 cursor-pointer mr-2" to="/">
+            Home
+          </Link>
           <Link className="hover:text-blue-500 cursor-pointer" to="/profile">
             Profile
           </Link>
+          </>
         ) : (
           <Link className="hover:text-blue-500 cursor-pointer" to="/login">
             Login

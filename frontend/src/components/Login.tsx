@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import api from "../api";
 import { Link, useNavigate } from "react-router";
 
@@ -36,11 +36,6 @@ export default function Login() {
       setHasError(true);
     }
   };
-  useEffect(() => {
-    if (localStorage.getItem("access")) {
-      navigate("/", { replace: true });
-    }
-  }, [navigate]);
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="w-[90%] md:w-1/2 lg:w-1/3 p-6 border border-gray-300 rounded-xl shadow-lg">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../api";
-import { useAuth } from "./ProtectedRoute";
+import { useAuth } from "./AuthProvider";
 import { useNavigate } from "react-router";
 
 export interface User {
