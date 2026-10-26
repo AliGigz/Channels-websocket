@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend-backend
+    command: daphne -b 0.0.0.0 -p 8000 backend.asgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: backend-redis
