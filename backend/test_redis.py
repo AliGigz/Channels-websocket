@@ -7,12 +7,11 @@ async def main():
     layer = RedisChannelLayer(
         hosts=[
             {
-                "host": "127.0.0.1",
+                "host": "redis",
                 "port": 6379,
             }
         ]
     )
-
     channel = await layer.new_channel()
 
     print("CHANNEL:", channel)

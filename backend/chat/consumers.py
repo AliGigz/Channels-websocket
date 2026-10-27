@@ -1,5 +1,7 @@
-
 import json
+import time
+import traceback
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from users.models import CustomUser
@@ -37,7 +39,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.other_user = await self.get_other_user()
             print(f"[5] Other user result: {self.other_user}")
         except Exception as e:
-            print(f"[ERROR] get_other_user failed: {type(e).__name__}: {e}")
+            print(
+                f"[ERROR] get_other_user failed: "
+                f"{type(e).__name__}: {e}"
+            )
+            traceback.print_exc()
             raise
 
         if not self.other_user:
@@ -55,16 +61,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
         print("[7] BEFORE channel_layer.group_add()")
 
         try:
+            start_time = time.monotonic()
+
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
             )
+
+            elapsed = time.monotonic() - start_time
+
             print("[8] AFTER channel_layer.group_add()")
+            print(f"[8] group_add took: {elapsed:.3f} seconds")
+
         except Exception as e:
-            print(
-                f"[ERROR] group_add failed: "
-                f"{type(e).__name__}: {e}"
-            )
+            print("\n========== GROUP ADD ERROR ==========")
+            print(f"[ERROR] Exception type: {type(e).__name__}")
+            print(f"[ERROR] Exception: {e!r}")
+            print(f"[ERROR] Group name: {self.room_group_name}")
+            print(f"[ERROR] Channel name: {self.channel_name}")
+            print("[ERROR] Full traceback:")
+            traceback.print_exc()
+            print("========== GROUP ADD ERROR END ==========\n")
             raise
 
         print("[9] BEFORE websocket.accept()")
@@ -72,11 +89,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             await self.accept()
             print("[10] AFTER websocket.accept()")
+
         except Exception as e:
             print(
                 f"[ERROR] websocket.accept() failed: "
                 f"{type(e).__name__}: {e}"
             )
+            traceback.print_exc()
             raise
 
         print("========== CONNECT END ==========\n")
@@ -95,18 +114,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
         try:
+            start_time = time.monotonic()
+
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
 
+            elapsed = time.monotonic() - start_time
+
             print("[DISCONNECT] AFTER group_discard()")
+            print(
+                f"[DISCONNECT] group_discard took: "
+                f"{elapsed:.3f} seconds"
+            )
 
         except Exception as e:
+            print("\n========== GROUP DISCARD ERROR ==========")
+            print(f"[ERROR] Exception type: {type(e).__name__}")
+            print(f"[ERROR] Exception: {e!r}")
             print(
-                f"[ERROR] group_discard failed: "
-                f"{type(e).__name__}: {e}"
+                f"[ERROR] Group name: "
+                f"{self.room_group_name}"
             )
+            print(
+                f"[ERROR] Channel name: "
+                f"{self.channel_name}"
+            )
+            print("[ERROR] Full traceback:")
+            traceback.print_exc()
+            print("========== GROUP DISCARD ERROR END ==========\n")
 
         print("========== DISCONNECT END ==========\n")
 
@@ -118,11 +155,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             data = json.loads(text_data)
             print(f"[RECEIVE] Parsed data: {data}")
+
         except Exception as e:
             print(
                 f"[ERROR] JSON parsing failed: "
                 f"{type(e).__name__}: {e}"
             )
+            traceback.print_exc()
             return
 
         content = data.get("content", "").strip()
@@ -137,31 +176,43 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         try:
             message = await self.create_message(content)
+
             print(f"[12] AFTER create_message(): {message}")
             print(f"[12] Message ID: {message.id}")
+
         except Exception as e:
             print(
                 f"[ERROR] create_message failed: "
                 f"{type(e).__name__}: {e}"
             )
+            traceback.print_exc()
             raise
 
         print("[13] BEFORE serialize_message()")
 
         try:
             serialized_message = await self.serialize_message(message)
+
             print(
                 f"[14] AFTER serialize_message(): "
                 f"{serialized_message}"
             )
+
         except Exception as e:
             print(
                 f"[ERROR] serialize_message failed: "
                 f"{type(e).__name__}: {e}"
             )
+            traceback.print_exc()
             raise
 
-        print("[15] BEFORE channel_layer.group_send()")
+        print("\n[15] BEFORE channel_layer.group_send()")
+        print(f"[15] Group name: {self.room_group_name}")
+        print(f"[15] Channel name: {self.channel_name}")
+        print(f"[15] Channel layer: {self.channel_layer}")
+        print(f"[15] Message: {serialized_message}")
+
+        start_time = time.monotonic()
 
         try:
             await self.channel_layer.group_send(
@@ -172,13 +223,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 },
             )
 
+            elapsed = time.monotonic() - start_time
+
             print("[16] AFTER channel_layer.group_send()")
+            print(f"[16] group_send took: {elapsed:.3f} seconds")
 
         except Exception as e:
+            elapsed = time.monotonic() - start_time
+
+            print("\n========== GROUP SEND ERROR ==========")
+            print(f"[ERROR] Exception type: {type(e).__name__}")
+            print(f"[ERROR] Exception: {e!r}")
             print(
-                f"[ERROR] group_send failed: "
-                f"{type(e).__name__}: {e}"
+                f"[ERROR] Time before failure: "
+                f"{elapsed:.3f} seconds"
             )
+            print(
+                f"[ERROR] Group name: "
+                f"{self.room_group_name}"
+            )
+            print(
+                f"[ERROR] Channel name: "
+                f"{self.channel_name}"
+            )
+            print("[ERROR] Full traceback:")
+            traceback.print_exc()
+            print("========== GROUP SEND ERROR END ==========\n")
+
             raise
 
         print("========== RECEIVE END ==========\n")
@@ -202,6 +273,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 f"[ERROR] WebSocket send failed: "
                 f"{type(e).__name__}: {e}"
             )
+            traceback.print_exc()
             raise
 
         print("========== CHAT MESSAGE END ==========\n")
@@ -211,7 +283,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         print("[DB] get_other_user() started")
 
         try:
-            user = CustomUser.objects.get(id=self.other_user_id)
+            user = CustomUser.objects.get(
+                id=self.other_user_id
+            )
 
             print(
                 f"[DB] get_other_user() success: "
