@@ -229,7 +229,7 @@ export default function Home() {
 
         <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3">
           {messages.map((message, index) => {
-            const isMine = message.sender.pk === currentUserId;
+            const isMine = message.sender.pk === Number(currentUserId);
 
             return (
               <div
