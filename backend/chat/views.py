@@ -26,8 +26,7 @@ class MessageViewSet(ModelViewSet):
     @action(detail=False, methods=["GET"], url_path=r'get_chat_messages/(?P<user_id>\d+)')
     def get_chat_messages(self, request: Request, user_id: int) -> Response:
         other_user = CustomUser.objects.get(pk=user_id)
-        messages = Message.objects.filter(Q(sender=self.request.user, reciever=other_user) | Q(sender=other_user, reciever=self.request.user))
-        print(messages)
+        messages = Message.objects.filter(Q(sender=self.request.user, reciever=other_user) | Q(sender=other_user, reciever=self.request.user)).order_by('-date_created')
         serializer = MessageSerializer(messages, many=True)
         print(serializer.data)
         return Response(serializer.data)
